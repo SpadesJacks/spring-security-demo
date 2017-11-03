@@ -4,7 +4,7 @@ spring seccurity demo
    dao 使用少量hibernate
    
    
-项目部署步骤
+项目部署步骤\n
 1.mysql数据库sec:运行sec.sql
 2.maven配置jar包
 3.运行http://yourip:youport/spring-security-demo/
