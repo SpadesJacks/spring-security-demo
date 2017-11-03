@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	   		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/security 
+			http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+	
+	<!--  Spring-Security 的配置 -->
+	<!-- 注意use-expressions=true.表示开启表达式,否则表达式将不可用.
+	see:http://www.family168.com/tutorial/springsecurity3/html/el-access.html
+	 -->
+	<security:http auto-config="true" use-expressions="true" access-denied-page="/denied" ><!-- 不要过滤图片等静态资源，其中**代表可以跨越目录，*不可以跨越目录。 -->
+		<security:intercept-url pattern="/img/**" access="permitAll" />
+		<security:intercept-url pattern="/css/**" access="permitAll" />
+
+		<security:intercept-url pattern="/login" access="permitAll"/>
+		<!--<security:intercept-url pattern="/main/admin" access="hasRole('ROLE_ADMIN')"/>-->
+		<!--<security:intercept-url pattern="/main/common" access="hasRole('ROLE_USER')"/>-->
+		
+		<security:form-login
+				login-page="/login"
+				authentication-failure-url="/login?error=true"
+				default-target-url="/main/common"/>
+			
+		<security:logout 
+				invalidate-session="true" 
+				logout-success-url="/login"
+				logout-url="/logout"/>
+		<security:custom-filter ref="myFilter" before="FILTER_SECURITY_INTERCEPTOR"/>
+
+	</security:http>
+	
+	<!-- 指定一个自定义的authentication-manager :customUserDetailsService -->
+	<security:authentication-manager alias="authenticationManager">
+	        <security:authentication-provider user-service-ref="customUserDetailsService">
+	        		<security:password-encoder ref="passwordEncoder"/>
+	        </security:authentication-provider>
+	</security:authentication-manager>
+
+	<bean id="myFilter" class="com.phn.security.MyFilterSecurityInterceptor" >
+		<property name="authenticationManager" ref="authenticationManager"/>
+		<property name="accessDecisionManager" ref="myAccessDecisionManager"/>
+		<property name="securityMetadataSource" ref="mySecurityMetadataSource"/>
+	</bean>
+
+	<bean id="userDetailsManager" class="com.phn.security.CustomUserDetailsService"/>
+
+	<!-- 访问决策器，决定某个用户具有的角色，是否有足够的权限去访问某个资源。 -->
+	<bean id="myAccessDecisionManager"
+			class="com.phn.security.MyAccessDecisionManager">
+	</bean>
+	<!-- 资源源数据定义，将所有的资源和权限对应关系建立起来，即定义某一资源可以被哪些角色去访问。 -->
+	<bean id="mySecurityMetadataSource"
+			class="com.phn.security.MyInvocationSecurityMetadataSourceService">
+		<constructor-arg ref="resoucesDaoImp"/>
+	</bean>
+
+	<!-- 对密码进行MD5编码 -->
+	<bean class="org.springframework.security.authentication.encoding.Md5PasswordEncoder" id="passwordEncoder"/>
+
+	<!-- 
+		通过 customUserDetailsService,Spring会自动的用户的访问级别.
+		也可以理解成:以后我们和数据库操作就是通过customUserDetailsService来进行关联.
+	 -->
+	<bean id="customUserDetailsService" class="com.phn.security.CustomUserDetailsService"/>
+	
+</beans>
